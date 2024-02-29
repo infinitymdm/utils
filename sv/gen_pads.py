@@ -42,31 +42,33 @@ def parse_line(line: str):
             bus_name = ''.join([c for c in token if c.isalnum() or c == '_'])
     return (is_output, wire_count, bus_name)
 
-def gen_input_pad(pin_num: int, wire_name: str, bus=0):
+def gen_input_pad(pin_num: int, wire_name: str, is_bus=False, bus_addr=0):
     ''' Generate an input pad string
 
         If the wire is part of a bus, specify the address with bus (e.g. bus=12 for addr[12])
     '''
-    return f'PADIN  p{pin_num:03}(.DI({wire_name}_i{"["+str(bus)+"]" if bus else ""}), .PAD({wire_name}{"["+str(bus)+"]" if bus else ""}));'
+    return f'PADIN  p{pin_num:03}(.DI({wire_name}_i{"["+str(bus_addr)+"]" if is_bus else ""}), .PAD({wire_name}{"["+str(bus_addr)+"]" if is_bus else ""}));'
 
-def gen_output_pad(pin_num: int, wire_name: str, bus=0):
+def gen_output_pad(pin_num: int, wire_name: str, is_bus=False, bus_addr=0):
     ''' Generate an output pad string
 
         If the wire is part of a bus, specify the address with bus (e.g. bus=12 for addr[12])
     '''
-    return f'PADOUT p{pin_num:03}(.DO({wire_name}_o{"["+str(bus)+"]" if bus else ""}), .PAD({wire_name}{"["+str(bus)+"]" if bus else ""}));'
+    return f'PADOUT p{pin_num:03}(.DO({wire_name}_o{"["+str(bus_addr)+"]" if is_bus else ""}), .PAD({wire_name}{"["+str(bus_addr)+"]" if is_bus else ""}));'
 
 def gen_pads(io_lines: list):
     ''' Given a list of verilog io lines, generates a list of pad strings.'''
     pad_lines = []
     for line in io_lines:
+        if not len(line.strip()):
+            continue # Skip empty lines
         (is_output, wire_count, name) = parse_line(line)
         pad_generator = gen_output_pad if is_output else gen_input_pad
         if wire_count == 1:
             pad_lines.append(pad_generator(len(pad_lines), name))
         else:
             for i in range(wire_count):
-                pad_lines.append(pad_generator(len(pad_lines), name, i))
+                pad_lines.append(pad_generator(len(pad_lines), name, True, i))
     return pad_lines
 
 if __name__ == '__main__':
@@ -126,6 +128,9 @@ if __name__ == '__main__':
         output logic [P.XLEN/2-1:0]  ddr_dq_out;
         input  logic [P.XLEN/2-1:0]  ddr_dq_in;
         input  logic                 dfi_clk_2x;
-        output logic                 dfi_clk_1x;
-        """
-    [print(line) for line in gen_pads(io_lines.split('\n'))]
+        output logic                 dfi_clk_1x;"""
+    pad_lines = gen_pads(io_lines.split('\n'))
+    with open('pads.sv', 'w', encoding='utf-8') as file:
+        for line in pad_lines:
+            file.write(line + '\n')
+        file.close()
