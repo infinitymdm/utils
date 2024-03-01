@@ -47,6 +47,8 @@ def gen_input_pad(pin_num: int, wire_name: str, is_bus=False, bus_addr=0):
 
         If the wire is part of a bus, specify the address with bus (e.g. bus=12 for addr[12])
     '''
+    if '_in' in wire_name:
+        wire_name = wire_name.replace('_in', '')
     return f'PADIN  p{pin_num:03}(.DI({wire_name}_i{"["+str(bus_addr)+"]" if is_bus else ""}), .PAD({wire_name}{"["+str(bus_addr)+"]" if is_bus else ""}));'
 
 def gen_output_pad(pin_num: int, wire_name: str, is_bus=False, bus_addr=0):
@@ -54,6 +56,8 @@ def gen_output_pad(pin_num: int, wire_name: str, is_bus=False, bus_addr=0):
 
         If the wire is part of a bus, specify the address with bus (e.g. bus=12 for addr[12])
     '''
+    if '_out' in wire_name:
+        wire_name = wire_name.replace('_out', '')
     return f'PADOUT p{pin_num:03}(.DO({wire_name}_o{"["+str(bus_addr)+"]" if is_bus else ""}), .PAD({wire_name}{"["+str(bus_addr)+"]" if is_bus else ""}));'
 
 def gen_pads(io_lines: list):
@@ -76,23 +80,6 @@ if __name__ == '__main__':
         input  logic                 clk;
         input  logic                 reset_ext;
         output logic                 reset;
-        input  logic [P.AHBW-1:0]    HRDATAEXT;
-        input  logic                 HREADYEXT;
-        input  logic                 HRESPEXT;
-        output logic                 HSELEXT;
-        output logic                 HSELEXTSDC;
-        output logic                 HCLK;
-        output logic                 HRESETn;
-        output logic [P.PA_BITS-1:0] HADDR;
-        output logic [P.AHBW-1:0]    HWDATA;
-        output logic [P.XLEN/8-1:0]  HWSTRB;
-        output logic                 HWRITE;
-        output logic [2:0]           HSIZE;
-        output logic [2:0]           HBURST;
-        output logic [3:0]           HPROT;
-        output logic [1:0]           HTRANS;
-        output logic                 HMASTLOCK;
-        output logic                 HREADY;
         input  logic                 TIMECLK;
         input  logic [31:0]          GPIOPinsIn;
         output logic [31:0]          GPIOPinsOut;
@@ -128,7 +115,8 @@ if __name__ == '__main__':
         output logic [P.XLEN/2-1:0]  ddr_dq_out;
         input  logic [P.XLEN/2-1:0]  ddr_dq_in;
         input  logic                 dfi_clk_2x;
-        output logic                 dfi_clk_1x;"""
+        output logic                 dfi_clk_1x;
+        """
     pad_lines = gen_pads(io_lines.split('\n'))
     with open('pads.sv', 'w', encoding='utf-8') as file:
         for line in pad_lines:

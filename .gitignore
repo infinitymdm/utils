@@ -1,2 +1,5 @@
 # Ignore cache directories
 __pycache__
+
+# Ignore generated files
+sv/pads.sv
